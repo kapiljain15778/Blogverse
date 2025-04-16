@@ -1,0 +1,7 @@
+name = "backend"
+compatibility_date = "2025-04-11"
+main = "src/index.ts"
+[vars]
+DATABASE_URL=""
+
+JWT_SECRET=""
