@@ -15,26 +15,51 @@ export const blogRouter = new Hono<{
   };
 }>();
 
-blogRouter.use('/*',async (c,next)=>{
-  const header = c.req.header('authorization') || "" ;
-  try{
-    const res = await verify(header,c.env.JWT_SECRET) as JWTPayload;
-    if(res){
-        const id = res.id || "";
-        c.set('userId', id.toString());
+// blogRouter.use('/*',async (c,next)=>{
+//   const header = c.req.header('authorization') || "" ;
+//   try{
+//     const res = await verify(header,c.env.JWT_SECRET) as JWTPayload;
+//     if(res){
+//         const id = res.id || "";
+//         c.set('userId', id.toString());
+//       await next();
+//     }
+//     else{
+//       c.status(401);
+//       return c.json({msg:'Unauthorized'});
+//     }
+//   }catch(err){
+//     c.status(403);
+//     return c.json({
+//       message:"You are not logged in"
+//     })
+//   }
+  
+// });
+
+blogRouter.use('/*', async (c, next) => {
+  const authHeader = c.req.header('authorization') || "";
+
+  // Extract token from "Bearer <token>"
+  const token = authHeader.replace("Bearer ", "");
+
+  try {
+    const res = await verify(token, c.env.JWT_SECRET) as JWTPayload;
+
+    if (res) {
+      const id = res.id || "";
+      c.set('userId', id.toString());
       await next();
-    }
-    else{
+    } else {
       c.status(401);
-      return c.json({msg:'Unauthorized'});
+      return c.json({ msg: 'Unauthorized' });
     }
-  }catch(err){
+  } catch (err) {
     c.status(403);
     return c.json({
-      message:"You are not logged in"
-    })
+      message: "You are not logged in"
+    });
   }
-  
 });
 
 blogRouter.post('/',async (c) => {
@@ -138,27 +163,94 @@ blogRouter.get('/', async (c) => {
 //   })
 // })
 
+// blogRouter.get('/bulk',async (c) => {
+//   const prisma = new PrismaClient({
+//       datasourceUrl: c.env?.DATABASE_URL, 
+//   }).$extends(withAccelerate());
+//   const blogs = await prisma.post.findMany({
+//       select:{
+//           content: true,
+//           title: true,
+//           id: true,
+//           author: {
+//               select: {
+//                   name: true
+//               }
+//           }
+         
+//       }
+//   });
+
+//   return c.json({
+//       blogs
+//   })
+// })
 blogRouter.get('/bulk',async (c) => {
   const prisma = new PrismaClient({
       datasourceUrl:c.env.DATABASE_URL,
   }).$extends(withAccelerate());
 
-  const blogs = await prisma.post.findMany();
+  const blogs = await prisma.post.findMany({
+    select:{
+      content: true,
+      title: true,
+      id: true,
+      author: {
+          select: {
+              name: true
+          }
+      }
+     
+  }
+  });
 
   return c.json({blogs:blogs});
 });
 
-blogRouter.get(':id',async (c) => {
+// blogRouter.get('/:id',async (c) => {
+//   const prisma = new PrismaClient({
+//       datasourceUrl:c.env.DATABASE_URL,
+//   }).$extends(withAccelerate());
+//   const blogid = c.req.param('id');
+//   const blog = await prisma.post.findUnique({
+//       where:{
+//           id:blogid,
+//       }
+//   })
+//   return c.json({
+//       blog,
+//   });
+// });
+
+blogRouter.get('/:id',async (c) => {
+  const id = c.req.param("id")
   const prisma = new PrismaClient({
-      datasourceUrl:c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
-  const blogid = c.req.param('id');
-  const blog = await prisma.post.findUnique({
-      where:{
-          id:blogid,
+  datasourceUrl: c.env?.DATABASE_URL,
+}).$extends(withAccelerate());
+
+  try {
+  const blog = await prisma.post.findFirst({
+      where: {
+          id: id
+      },
+      select: {
+          id: true,
+          title: true,
+          content: true,
+          author: {
+              select: {
+                  name: true
+              }
+          }
       }
   })
-  return c.json({
-      blog,
-  });
-});
+      return c.json({
+          blog
+      });
+  } catch(e){
+      c.status(411);
+      return c.json({
+          msg: "Error while fecthing the blog post"
+      })
+  }
+})
