@@ -14,10 +14,13 @@ export default defineConfig({
   plugins: [react()],
   base: '/',
   build: {
-    outDir: 'dist'
+    outDir: 'dist',
   },
   server: {
-    historyApiFallback: true
-  }
+    // Vite automatically handles history fallback in development mode,
+    // so no need to specify historyApiFallback.
+    // Just ensure you're using a proper base.
+  },
 })
+
 
