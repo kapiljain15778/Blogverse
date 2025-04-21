@@ -10,16 +10,7 @@ const app = new Hono<{
 	}
 }>();
 app.use('/*', cors());
-// app.use('/*', cors({
-//   origin: (origin) => {
-//     // allow localhost and your deployed frontend
-//     const allowedOrigins = ['http://localhost:5173', 'https://yourfrontend.com'];
-//     return allowedOrigins.includes(origin) ? origin : '';
-//   },
-//   credentials: true,
-//   allowHeaders: ['Content-Type', 'Authorization'],
-//   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-// }));
+
 
 app.route("/api/v1/user", userRouter);
 app.route("/api/v1/blog", blogRouter);
